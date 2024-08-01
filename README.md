@@ -1,3 +1,38 @@
+# My Pantry Manager
+
+=====================
+
+### Overview
+This is a simple console-based application that allows users to manage their pantry inventory. It provides basic functionality
+to add, remove, and list items in the pantry.
+
+### Features
+- Sign Up as user
+- Login as user
+- Add items to the pantry
+- Remove items from the pantry
+- List all items in the pantry
+- Search for specific items in the pantry
+- Update quantity of existing items in the pantry
+
+
+- Logout from the user account (coming soon)
+
+### Tech-Stack
+- Next.js 13
+- React 18
+- Material UI Core
+- Firebase
+- Deployed with Vercel
+
+
+### To view live demo
+Visit: https://my-pantry-eight.vercel.app/
+
+
+
+
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
