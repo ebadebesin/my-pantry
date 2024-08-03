@@ -1,8 +1,10 @@
 "use client"
 
-import { Box, Typography, Button, Modal, TextField } from "@mui/material";
+import { Box, Typography, Button, Modal, TextField, Tooltip } from "@mui/material";
 import { Stack } from "@mui/material";
 import { SearchRounded } from '@mui/icons-material';
+import DeleteForeverSharpIcon from '@mui/icons-material/DeleteForeverSharp';
+import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 
 import Header from '@/components/header';
 
@@ -13,7 +15,7 @@ import 'firebase/compat/firestore';
 import 'firebase/compat/auth';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
-import { collection, query, doc, getDocs, setDoc, deleteDoc, getDoc, where} from "firebase/firestore"; 
+import { collection, doc, getDocs, setDoc, deleteDoc, getDoc, where} from "firebase/firestore"; 
 import { useEffect, useState } from "react";
 import { useRouter } from 'next/navigation';
 
@@ -199,26 +201,51 @@ export default function Home() {
   }, [])
 
 
-  // Removes all items from firebase table based on itemName
-  // const removeAllItems = async (item) => {
-  //   const docRef = doc(collection(firestore, "pantry"), item);
-  //   const docSnap = await getDoc(docRef);
-  //   if (docSnap.exists()) {
-  //     await deleteDoc(docRef);
-  //   }
-  //   await updateInventory();
-  // }
+  const removeAllItems = async () => {
+    try {
+      const user = firebase.auth().currentUser;
+    if (!user) {
+      console.error('User not authenticated.');
+      return { error: 'User not authenticated.' };
+    }
 
+      const querySnapshot = await getDocs(collection(firestore, "pantry"));
+      const batch = firestore.batch();
+  
+      querySnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+  
+      await batch.commit();
+      console.log("All items removed from pantry");
+    } catch (error) {
+      console.error("Error removing items:", error);
+    }
+    await updatePantry()
+  }
+
+  // Removes all items from firebase table based on itemName
+  const removeItembyName = async (item) => {
+    try{
+      // const user = firebase.auth().currentUser;
+      // if (!user) {
+      //   console.error('User not authenticated.');
+      //   return { error: 'User not authenticated.' };
+      // }
+    const docRef = doc(collection(firestore, 'pantry'), item)  
+        await deleteDoc(docRef)
+
+      console.log('Item ${item} removed from pantry');
+      } catch (error) {
+        console.error('Error removing item:', error);
+      }
+    await updatePantry()
+  }
 
 
   return (
   <Box width="100vw" height="100vh" display="flex" justifyContent="center" alignItems="center" flexDirection={'column'} gap={2} overflow={"hidden"}>
-     {/* <Button onClick={handleSignIn}>SignIn</Button>
-     <Button onClick={handleSignUp}>signUp</Button> */}
           <Header />
-     {/* <Box bgcolor={'lightblue'} padding={"10px"} textAlign={'center'} top={0} position={'absolute'} width={'100%'}>
-<Typography variant="h3" component="h2" gutterBottom>Welcome to the Pantry!</Typography>
-        </Box> */}
 
 
         <Box display= {'flex'} >
@@ -257,7 +284,9 @@ export default function Home() {
         </Box>
       </Modal>
 
-      <Button variant="contained" onClick={handleOpen}> Add item</Button>
+      <Button variant="contained" onClick={handleOpen}> Add item to Pantry</Button>
+      <Button variant="contained" onClick={() => removeAllItems()}> Remove all Pantry Items</Button>
+
 
 
     <Box width="55%" height="60%" border="1px solid black" overflow={'auto'}>
@@ -270,52 +299,6 @@ export default function Home() {
         </Typography> 
       </Box>
 
-      {/* Search box */}
-      {/* <Box width="800px" heigth="500px" display={'flex'} paddingX={5} alignItems={'center'} bgcolor={'#f0f0f0'} justifyContent={'space-between'}>
-        <TextField
-          id="outlined-basic"
-          label="Search Pantry"
-          variant="outlined"
-          fullWidth
-          value={itemName}
-          onChange={(e) => setItemName(e.target.value)} // Update itemName state
-        />
-        <Button variant="contained" onClick={() => searchItem(itemName)}>
-          Search
-        </Button>
-      </Box> */}
-
-
-      {/* Pantry Item Stack */}
-
-      {/* {searchResults.length > 0 ? ( */}
-
-
-      {/* <Stack width="800px" heigth="500px" spacing ={2} overflow={'auto'}> */}
-
-      {/* {searchResults.map(({name, count}) => (       
-
-      // {pantry.map(({name, count}) => (
-
-      <Box key={name} width="100%" minHeight="150px" display= {'flex'} justifyContent={'space-between'} paddingX={5} alignItems={'center'} bgcolor={'#f0f0f0'}>
-        
-        <Typography variant={'h3'} textAlign={'center'} color={'#333'}>
-        {
-          //capitalize first letter of text
-          name.charAt(0).toUpperCase() + name.slice(1)
-        }
-        </Typography>
-        <Typography variant={'h3'} textAlign={'center'} color={'#333'}> Quantity: {count} </Typography>
-
-        <Button variant="contained" onClick={() => {removeItem(name); handleClose(); }}>Remove</Button>
-        
-      </Box>
-
-
-      ))}
-      </Stack>
-
-      ) : (  */}
 
         <Stack width="800px" heigth="500px" spacing ={2} overflow={'auto'}>
 
@@ -331,15 +314,18 @@ export default function Home() {
         </Typography>
         <Typography variant={'h3'} textAlign={'center'} color={'#333'}> Quantity : {count} </Typography>
 
-        <Button variant="contained" onClick={() => {removeItem(name); handleClose(); }}>Remove</Button>
+        <Button variant="contained" label="decrease" onClick={() => {removeItem(name); handleClose(); }}> <Tooltip title="Decrease item quantity"><RemoveCircleIcon /> </Tooltip> 
+        </Button>
+
+        <Button variant="contained" label="remove item" onClick={() => {removeItembyName(name); handleClose(); }}> <Tooltip title="Remove item">  <DeleteForeverSharpIcon /> </Tooltip>
+        </Button>
+
         
       </Box>
 
 
       ))}
       </Stack>
-
-      {/* )} */}
 
     </Box>
       

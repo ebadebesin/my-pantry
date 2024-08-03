@@ -15,6 +15,10 @@ export default function SignIn() {
   const router = useRouter()
   const [error, setError] = useState(null)
 
+  const handleSignUp = () => {
+    router.push('/signup');
+  };
+
   async function login(email, password) {
     try {
         if (!email || !password) {
@@ -109,6 +113,20 @@ export default function SignIn() {
                                 }} /> : 'Sign In'
                             }
                         </Button>
+                    </Box>
+
+                    <Box display={'center'}>Don't have an account? 
+                      <Button type="submit"
+                            fullWidth
+                            variant="contained"
+                            onClick={handleSignUp}
+                            >
+                              {
+                                loading ? <CircularProgress size={24} sx={{
+                                    color: 'white'
+                                }} /> : 'Sign Up'
+                            }
+                            </Button>
                     </Box>
                 </Box>
             </Container>

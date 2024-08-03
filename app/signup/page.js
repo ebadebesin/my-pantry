@@ -5,22 +5,34 @@
 import { useState } from 'react';
 import { TextField, Button, Typography, Box } from '@mui/material';
 import firebase from '@/firebase';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 
 export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter(); // Get the router object
+  const [loading, setLoading] = useState(false)
 
   const handleSignUp = async () => {
     try {
       await firebase.auth().createUserWithEmailAndPassword(email, password);
       // Handle successful sign-up
-      router.push('/SignIn');
+      setLoading(false);
+      router.push('/login');
     } catch (error) {
       console.error(error);
       // Handle sign-up error
     }
+
+    // if (response.success) {
+    //   setLoading(false)
+    //   console.log('SignUp successful!')
+    //   router.push('/')
+    // } else {
+    //   setLoading(false)
+    //   const errorData = response.error;
+    //   setError(errorData.error || 'An error occurred. Please try again.')
+    // }
   };
 
   return (
