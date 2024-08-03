@@ -27,6 +27,7 @@ to add, remove, and list items in the pantry.
 
 ### To view live demo
 Visit: https://my-pantry-eight.vercel.app/
+Or Visit to login or sign up: https://my-pantry-eight.vercel.app/login 
 
 
 
