@@ -2,17 +2,23 @@
 
 import { Box, Typography, Button, Modal, TextField } from "@mui/material";
 import { Stack } from "@mui/material";
+import { SearchRounded } from '@mui/icons-material';
+
+import Header from '@/components/header';
 
 // import { firestore } from "@/firebase";
-
-// import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 import firebase from '@/firebase';
 import 'firebase/compat/firestore';
 import 'firebase/compat/auth';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 import { collection, query, doc, getDocs, setDoc, deleteDoc, getDoc, where} from "firebase/firestore"; 
 import { useEffect, useState } from "react";
+import { useRouter } from 'next/navigation';
+
+// import SignIn from '@/components/SignIn';
+// import SignUp from '@/components/SignUp';
 
 const style = {
   position: 'absolute',
@@ -48,8 +54,17 @@ export default function Home() {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
   const [itemName, setItemName] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
+  // const [searchResults, setSearchResults] = useState([]);
 
+  const router = useRouter();
+
+  // const handleSignIn = () => {
+  //   router.push('/SignIn');
+  // };
+
+  // const handleSignUp = () => {
+  //   router.push('/SignUp');
+  // };
 
 ////////////// Update function  
   // const updatePantry = async() => {
@@ -69,6 +84,10 @@ export default function Home() {
 
   const updatePantry = async() => {
     try {
+      const user = firebase.auth().currentUser;
+      if (!user) {
+        return { error: 'User not authenticated.' };
+      }
       const snapshot = await getDocs(collection(firestore, 'pantry'))
       const pantryList = snapshot.docs.map(doc => ({name: doc.id, ...doc.data()}))
       setPantry(pantryList)
@@ -113,30 +132,71 @@ export default function Home() {
   }
 
 
- ////////// // Search Function
-  const searchItem = async (item) => {
-    try {
-      if (!item) {
-        // No search term, fetch all items
-        console.log('no item found');
-        return await updatePantry();
-      }
-  
-      const q = query(collection(firestore, 'pantry'), where("name", ">=", item)); // Use "name" field for searching items
-      const docSnap = await getDocs(q);
-      const docs = docSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  
-      // Find the exact match for the search term
-      const exactMatch = docs.find(items => items.name.toLowerCase() === items.toLowerCase());
-  
-      // Update search results, prioritizing the exact match
-  setSearchResults(exactMatch ? [exactMatch].concat(docs.filter(item => item !== exactMatch)) : docs.filter(item => item !== exactMatch));
-  console.log('found item');
-    } catch (error) {
-      console.error("Error searching documents:", error);
+ ////////// // Search Function/filter function
+ const search = async (query) => {
+  try {
+    const user = firebase.auth().currentUser;
+    if (!user) {
+      console.error('User not authenticated.');
+      return { error: 'User not authenticated.' };
     }
-    await updatePantry()
+
+    const collectionRef = firebase.firestore().collection("pantry");
+
+    console.log(`Searching for documents with query: ${query}`);
+
+    // Fetch all documents and filter client-side
+    const querySnapshot = await collectionRef.get();
+    // console.log(querySnapshot);
+    if (querySnapshot.empty) {
+      console.error('No documents found.');
+      return { error: 'No documents found.' };
+    }
+
+  const documents = querySnapshot.docs
+    .map(doc => doc.data())
+    .filter(doc => doc.name && doc.name.toLowerCase().includes(query.toLowerCase()));
+    console.log(querySnapshot.docs);
+    if (documents.length === 0) {
+    console.error('No documents found.');
+    return { error: 'No documents found.' };
+    }
+
+    console.log(documents);
+    setPantry(documents);
+  } catch (error) {
+    console.error('Error searching documents:', error);
+    return { error: 'Something went wrong.' };
+    }
+  };
+
+  async function check() {
+    const auth = getAuth();
+    return new Promise((resolve, reject) => {
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          resolve({ success: true, user: user, message: 'User is logged in.' });
+        } else {
+          resolve({ success: false, message: 'No user is logged in.' });
+        }
+      }, (error) => {
+        console.error(error);
+        reject({ error: 'Something went wrong.' });
+      });
+    });
   }
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const res = await check()
+      const data = res;
+      if (!data.success) {
+        router.push('/SignIn')
+      }
+      updatePantry();
+    };
+    checkAuth();
+  }, [])
 
 
   // Removes all items from firebase table based on itemName
@@ -153,6 +213,29 @@ export default function Home() {
 
   return (
   <Box width="100vw" height="100vh" display="flex" justifyContent="center" alignItems="center" flexDirection={'column'} gap={2} overflow={"hidden"}>
+     {/* <Button onClick={handleSignIn}>SignIn</Button>
+     <Button onClick={handleSignUp}>signUp</Button> */}
+          <Header />
+     {/* <Box bgcolor={'lightblue'} padding={"10px"} textAlign={'center'} top={0} position={'absolute'} width={'100%'}>
+<Typography variant="h3" component="h2" gutterBottom>Welcome to the Pantry!</Typography>
+        </Box> */}
+
+
+        <Box display= {'flex'} >
+        <TextField
+            id="search"
+            label="Search Pantry"
+            variant='outlined'
+            sx={{ width: '80%' }}
+          />
+          <Button variant='contained' onClick={
+            () => search(document.getElementById('search').value)
+          }>
+            <SearchRounded />
+          </Button>
+      </Box>
+
+
       <Modal
         open={open}
         onClose={handleClose}
@@ -180,14 +263,15 @@ export default function Home() {
     <Box width="55%" height="60%" border="1px solid black" overflow={'auto'}>
     
       {/* Pantry Header Box */}
-      <Box width="800px" heigth="500px" bgcolor={'#ADD8E6'}>
+      <Box width="800px" heigth="500px" bgcolor={'#ADD8E6'} position="sticky" top={0} zIndex={1} // Ensure it's above other content
+      >
         <Typography variant={'h2'} textAlign={'center'} color={'#333'}>
             Pantry Items
         </Typography> 
       </Box>
 
       {/* Search box */}
-      <Box width="800px" heigth="500px" display={'flex'} paddingX={5} alignItems={'center'} bgcolor={'#f0f0f0'} justifyContent={'space-between'}>
+      {/* <Box width="800px" heigth="500px" display={'flex'} paddingX={5} alignItems={'center'} bgcolor={'#f0f0f0'} justifyContent={'space-between'}>
         <TextField
           id="outlined-basic"
           label="Search Pantry"
@@ -199,17 +283,17 @@ export default function Home() {
         <Button variant="contained" onClick={() => searchItem(itemName)}>
           Search
         </Button>
-      </Box>
+      </Box> */}
 
 
       {/* Pantry Item Stack */}
 
-      {searchResults.length > 0 ? (
+      {/* {searchResults.length > 0 ? ( */}
 
 
-      <Stack width="800px" heigth="500px" spacing ={2} overflow={'auto'}>
+      {/* <Stack width="800px" heigth="500px" spacing ={2} overflow={'auto'}> */}
 
-      {searchResults.map(({name, count}) => (       
+      {/* {searchResults.map(({name, count}) => (       
 
       // {pantry.map(({name, count}) => (
 
@@ -231,7 +315,7 @@ export default function Home() {
       ))}
       </Stack>
 
-      ) : ( 
+      ) : (  */}
 
         <Stack width="800px" heigth="500px" spacing ={2} overflow={'auto'}>
 
@@ -255,10 +339,13 @@ export default function Home() {
       ))}
       </Stack>
 
-      )}
+      {/* )} */}
 
     </Box>
       
+    <Box bgcolor={'lightblue'} padding={"20px"} textAlign={'center'} bottom={0} position={'absolute'} width={'100%'}>
+          My Pantry © 2024 | All rights reserved.
+        </Box>
 
   </Box>
     
