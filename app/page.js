@@ -56,33 +56,11 @@ export default function Home() {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
   const [itemName, setItemName] = useState('');
-  // const [searchResults, setSearchResults] = useState([]);
+  const [searchQuery, setSearch] = useState('');
 
   const router = useRouter();
 
-  // const handleSignIn = () => {
-  //   router.push('/SignIn');
-  // };
-
-  // const handleSignUp = () => {
-  //   router.push('/SignUp');
-  // };
-
 ////////////// Update function  
-  // const updatePantry = async() => {
-  //   const snapshot = query(collection(firestore, 'pantry'))
-  //   const docs = await getDocs(snapshot)
-  //   const pantryList = []
-  //   docs.forEach((doc) => {
-  //     pantryList.push({name: doc.id, ...doc.data()})
-  //   });
-  //   console.log(pantryList);
-  //   setPantry(pantryList)
-  // }
-
-  // useEffect(() => {
-  //   updatePantry()
-  // },[])
 
   const updatePantry = async() => {
     try {
@@ -135,7 +113,7 @@ export default function Home() {
 
 
  ////////// // Search Function/filter function
- const search = async (query) => {
+ const search = async (item) => {
   try {
     const user = firebase.auth().currentUser;
     if (!user) {
@@ -143,34 +121,43 @@ export default function Home() {
       return { error: 'User not authenticated.' };
     }
 
-    const collectionRef = firebase.firestore().collection("pantry");
+    // const collectionRef = firebase.firestore().collection("pantry");
+    const collectionRef = collection(firestore, "pantry");
 
-    console.log(`Searching for documents with query: ${query}`);
+    console.log(`Searching for documents with item: ${item}`);
 
     // Fetch all documents and filter client-side
-    const querySnapshot = await collectionRef.get();
+    const querySnapshot = await getDocs(collectionRef);
+
     // console.log(querySnapshot);
+
     if (querySnapshot.empty) {
       console.error('No documents found.');
       return { error: 'No documents found.' };
     }
 
-  const documents = querySnapshot.docs
+    const documents = querySnapshot.docs
     .map(doc => doc.data())
-    .filter(doc => doc.name && doc.name.toLowerCase().includes(query.toLowerCase()));
-    console.log(querySnapshot.docs);
+    .filter(doc => doc.name && doc.name.toLowerCase().includes(item.toLowerCase()));
+  
+ // console.log(querySnapshot.docs);
+
+    console.log('Found  document: ', documents);
+
     if (documents.length === 0) {
-    console.error('No documents found.');
-    return { error: 'No documents found.' };
+      console.error('No documents found.'); //+++
+      return { error: 'No documents found.' };
     }
 
-    console.log(documents);
     setPantry(documents);
+
   } catch (error) {
     console.error('Error searching documents:', error);
     return { error: 'Something went wrong.' };
     }
-  };
+
+ };
+
 
   async function check() {
     const auth = getAuth();
@@ -187,6 +174,7 @@ export default function Home() {
       });
     });
   }
+
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -235,7 +223,7 @@ export default function Home() {
     const docRef = doc(collection(firestore, 'pantry'), item)  
         await deleteDoc(docRef)
 
-      console.log('Item ${item} removed from pantry');
+      console.log(`Item ${item} removed from pantry`);
       } catch (error) {
         console.error('Error removing item:', error);
       }
@@ -248,16 +236,19 @@ export default function Home() {
           <Header />
 
 
-        <Box display= {'flex'} >
+        <Box display= {'flex'} gap={1}>
         <TextField
             id="search"
             label="Search Pantry"
             variant='outlined'
             sx={{ width: '80%' }}
+            value={searchQuery}
+            onChange={(e) => setSearch(e.target.value)}
           />
-          <Button variant='contained' onClick={
-            () => search(document.getElementById('search').value)
-          }>
+          <Button variant='contained' 
+          // onClick={() => search(document.getElementById('search').value)}
+          onClick={() => search(searchQuery)}
+          >
             <SearchRounded />
           </Button>
       </Box>
@@ -284,9 +275,10 @@ export default function Home() {
         </Box>
       </Modal>
 
+<Box display="flex" justifyContent="center" alignItems="center" flexDirection={'row'} gap={2} >
       <Button variant="contained" onClick={handleOpen}> Add item to Pantry</Button>
       <Button variant="contained" onClick={() => removeAllItems()}> Remove all Pantry Items</Button>
-
+</Box>
 
 
     <Box width="55%" height="60%" border="1px solid black" overflow={'auto'}>
