@@ -115,7 +115,7 @@ export default function SignIn() {
                         </Button>
                     </Box>
 
-                    <Box display={'center'}>Don't have an account? 
+                    <Box display={'center'}>Do not have an account? 
                       <Button type="submit"
                             fullWidth
                             variant="contained"

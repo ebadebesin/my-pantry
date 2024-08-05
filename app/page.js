@@ -83,16 +83,34 @@ export default function Home() {
 
 ///////////// Add function  
   const addItem = async (item) => {
-    const docRef = doc(collection(firestore, 'pantry'), item)
-    //check if exist
-    const docSnap = await getDoc(docRef)
-    if (docSnap.exists()){
-      const {count} = docSnap.data()
-      await setDoc(docRef, {count: count + 1}) 
-    } else {
-      await setDoc(docRef, {count: 1})
+    try {
+      const docRef = doc(collection(firestore, 'pantry'), item);
+      const docSnap = await getDoc(docRef);
+  
+      if (docSnap.exists()) {
+        const docData = docSnap.data();
+        const updatedData = {
+          count: (docData.count || 0) + 1,
+          name: docData.name || item // Ensure the 'name' field is set
+        };
+        await setDoc(docRef, updatedData);
+      } else {
+        await setDoc(docRef, { name: item, count: 1 });
+      }
+      await updatePantry();
+    } catch (error) {
+      console.error('Error adding item:', error);
     }
-    await updatePantry()
+    // const docRef = doc(collection(firestore, 'pantry'), item)
+    // //check if exist
+    // const docSnap = await getDoc(docRef, {name: item});
+    // if (docSnap.exists()){
+    //   const {count} = docSnap.data()
+    //   await setDoc(docRef, {count: count + 1}) 
+    // } else {
+    //   await setDoc(docRef, {count: 1})
+    // }
+    // await updatePantry()
   }
 
 
@@ -115,37 +133,38 @@ export default function Home() {
  ////////// // Search Function/filter function
  const search = async (item) => {
   try {
-    const user = firebase.auth().currentUser;
+    const auth = getAuth();
+    const user = auth.currentUser; // Ensure you are getting the authenticated user
     if (!user) {
       console.error('User not authenticated.');
       return { error: 'User not authenticated.' };
     }
 
-    // const collectionRef = firebase.firestore().collection("pantry");
     const collectionRef = collection(firestore, "pantry");
-
     console.log(`Searching for documents with item: ${item}`);
 
-    // Fetch all documents and filter client-side
+    // Fetch all documents
     const querySnapshot = await getDocs(collectionRef);
 
-    // console.log(querySnapshot);
+    // Log the fetched documents for debugging
+    const fetchedDocs = querySnapshot.docs.map(doc => doc.data());
+    console.log('Fetched documents:', fetchedDocs);
 
     if (querySnapshot.empty) {
       console.error('No documents found.');
       return { error: 'No documents found.' };
     }
 
-    const documents = querySnapshot.docs
-    .map(doc => doc.data())
-    .filter(doc => doc.name && doc.name.toLowerCase().includes(item.toLowerCase()));
-  
- // console.log(querySnapshot.docs);
+    const documents = fetchedDocs.filter(doc => doc.name && doc.name.toLowerCase().includes(item.toLowerCase()));
 
-    console.log('Found  document: ', documents);
+    console.log('Filtered documents:', documents);
 
     if (documents.length === 0) {
-      console.error('No documents found.'); //+++
+      console.error('No documents found.');
+      const confirm = window.confirm('That item is not in pantry');
+      if (!confirm) {
+          return;
+      }
       return { error: 'No documents found.' };
     }
 
@@ -154,7 +173,48 @@ export default function Home() {
   } catch (error) {
     console.error('Error searching documents:', error);
     return { error: 'Something went wrong.' };
-    }
+  }
+//   try {
+//     const user = firebase.auth().currentUser;
+//     if (!user) {
+//       console.error('User not authenticated.');
+//       return { error: 'User not authenticated.' };
+//     }
+
+//     // const collectionRef = firebase.firestore().collection("pantry");
+//     const collectionRef = collection(firestore, "pantry");
+
+//     console.log(`Searching for documents with item: ${item}`);
+
+//     // Fetch all documents and filter client-side
+//     const querySnapshot = await getDocs(collectionRef);
+
+//     // console.log(querySnapshot);
+
+//     if (querySnapshot.empty) {
+//       console.error('No documents found.');
+//       return { error: 'No documents found.' };
+//     }
+
+//     const documents = querySnapshot.docs
+//     .map(doc => doc.data())
+//     .filter(doc => doc.id && doc.id.toLowerCase().includes(item.toLowerCase()));
+  
+//  // console.log(querySnapshot.docs);
+
+//     console.log('Found  document: ', documents);
+
+//     if (documents.length === 0) {
+//       console.error('No documents found.'); //+++
+//       return { error: 'No documents found.' };
+//     }
+
+//     setPantry(documents);
+
+//   } catch (error) {
+//     console.error('Error searching documents:', error);
+//     return { error: 'Something went wrong.' };
+//     }
 
  };
 
@@ -248,6 +308,7 @@ export default function Home() {
           <Button variant='contained' 
           // onClick={() => search(document.getElementById('search').value)}
           onClick={() => search(searchQuery)}
+
           >
             <SearchRounded />
           </Button>
