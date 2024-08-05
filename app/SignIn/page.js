@@ -57,6 +57,10 @@ export default function SignIn() {
     } else {
         setLoading(false)
         const errorData = response.error;
+        const confirm = window.confirm('Error: Email does not exist');
+        if (!confirm) {
+            return;
+        }
         setError(errorData.error || 'An error occurred. Please try again.')
     }
   }

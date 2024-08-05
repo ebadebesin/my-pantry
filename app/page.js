@@ -5,6 +5,7 @@ import { Stack } from "@mui/material";
 import { SearchRounded } from '@mui/icons-material';
 import DeleteForeverSharpIcon from '@mui/icons-material/DeleteForeverSharp';
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
+import AddIcon from '@mui/icons-material/Add';
 
 import Header from '@/components/header';
 
@@ -38,16 +39,6 @@ const style = {
 };
 
 // Sets the type of item
-const type = [
-  {
-    value: 'Perishable',
-    label: 'Perishable',
-  },
-  {
-    value: 'Non-perishable',
-    label: 'Non-perishable',
-  },
-];
 
 export default function Home() {
   const firestore = firebase.firestore();
@@ -98,6 +89,10 @@ export default function Home() {
         await setDoc(docRef, { name: item, count: 1 });
       }
       await updatePantry();
+      const confirm = window.alert('Item added!');
+        if (!confirm) {
+            return;
+        }
     } catch (error) {
       console.error('Error adding item:', error);
     }
@@ -114,7 +109,7 @@ export default function Home() {
   }
 
 
- ////// /////// Remove Function
+ ////// /////// Remove Function by quantity
   const removeItem = async (item) => {
     const docRef = doc(collection(firestore, 'pantry'), item)
     const docSnap = await getDoc(docRef)
@@ -129,6 +124,24 @@ export default function Home() {
   await updatePantry()
   }
 
+//////////////// Add item by count
+  const addItemByCount = async (item) => {
+    try {
+      const docRef = doc(collection(firestore, 'pantry'), item);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const { count } = docSnap.data();
+        await setDoc(docRef, { count: count + 1 }, { merge: true });
+      } else {
+        await setDoc(docRef, { name: item, count: 1 });
+      }
+  
+      await updatePantry();
+    } catch (error) {
+      console.error('Error adding item:', error);
+    }
+  }
 
  ////////// // Search Function/filter function
  const search = async (item) => {
@@ -174,47 +187,6 @@ export default function Home() {
     console.error('Error searching documents:', error);
     return { error: 'Something went wrong.' };
   }
-//   try {
-//     const user = firebase.auth().currentUser;
-//     if (!user) {
-//       console.error('User not authenticated.');
-//       return { error: 'User not authenticated.' };
-//     }
-
-//     // const collectionRef = firebase.firestore().collection("pantry");
-//     const collectionRef = collection(firestore, "pantry");
-
-//     console.log(`Searching for documents with item: ${item}`);
-
-//     // Fetch all documents and filter client-side
-//     const querySnapshot = await getDocs(collectionRef);
-
-//     // console.log(querySnapshot);
-
-//     if (querySnapshot.empty) {
-//       console.error('No documents found.');
-//       return { error: 'No documents found.' };
-//     }
-
-//     const documents = querySnapshot.docs
-//     .map(doc => doc.data())
-//     .filter(doc => doc.id && doc.id.toLowerCase().includes(item.toLowerCase()));
-  
-//  // console.log(querySnapshot.docs);
-
-//     console.log('Found  document: ', documents);
-
-//     if (documents.length === 0) {
-//       console.error('No documents found.'); //+++
-//       return { error: 'No documents found.' };
-//     }
-
-//     setPantry(documents);
-
-//   } catch (error) {
-//     console.error('Error searching documents:', error);
-//     return { error: 'Something went wrong.' };
-//     }
 
  };
 
@@ -365,10 +337,15 @@ export default function Home() {
           name.charAt(0).toUpperCase() + name.slice(1)
         }
         </Typography>
-        <Typography variant={'h3'} textAlign={'center'} color={'#333'}> Quantity : {count} </Typography>
+        <Typography variant={'h3'} textAlign={'center'} color={'#333'}> {count} </Typography>
 
-        <Button variant="contained" label="decrease" onClick={() => {removeItem(name); handleClose(); }}> <Tooltip title="Decrease item quantity"><RemoveCircleIcon /> </Tooltip> 
-        </Button>
+        <Box display= {'flex'} paddingX={2}>
+          <Button variant="contained" label="decrease" onClick={() => {removeItem(name); handleClose(); }}> <Tooltip title="Decrease item quantity"><RemoveCircleIcon fontSize="small" /> </Tooltip> 
+          </Button>
+
+          <Button variant="contained" label="decrease" onClick={() => {addItemByCount(name); handleClose(); }}> <Tooltip title="Increase item quantity"><AddIcon fontSize="small" /> </Tooltip> 
+          </Button>
+        </Box>
 
         <Button variant="contained" label="remove item" onClick={() => {removeItembyName(name); handleClose(); }}> <Tooltip title="Remove item">  <DeleteForeverSharpIcon /> </Tooltip>
         </Button>
