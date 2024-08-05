@@ -30,7 +30,7 @@ const Header = () => {
                         }
                         const response = await logout();
                         if (response.success) {
-                            window.location.href = '/login';
+                            window.location.href = '/SignIn';
                         }
                     }
                 }>Logout</Button>

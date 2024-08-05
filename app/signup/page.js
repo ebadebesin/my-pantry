@@ -18,9 +18,20 @@ export default function SignUp() {
       await firebase.auth().createUserWithEmailAndPassword(email, password);
       // Handle successful sign-up
       setLoading(false);
-      router.push('/login');
+      router.push('/SignIn');
     } catch (error) {
+      setLoading(false)
+      if (error.code === 'auth/email-already-in-use') {
+        const confirm = window.confirm('Email is already in use');
+      if (!confirm) {
+          return;
+      }
+        console.error('Email already in use.');
+        // Handle email already in use error
+      } else {
       console.error(error);
+      }
+
       // Handle sign-up error
     }
 
